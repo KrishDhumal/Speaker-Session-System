@@ -54,7 +54,7 @@ every proposal visible to everyone who needs it.
 
 ## Constraints
 
-- **Time**: built within a single-semester lab schedule, 13 tasks.
+- **Time**: built within a single-semester lab schedule, 14 tasks.
 - **Skills**: Java and Spring are known; the rest is being learned alongside.
 - **Infrastructure**: must run on one laptop — no cloud account, no paid service.
 - **Data**: an embedded database is acceptable; no database server to administer.

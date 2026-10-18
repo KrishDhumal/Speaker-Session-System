@@ -1,4 +1,4 @@
-# Tasks 6–7 — Jenkins Installation and Pipeline
+# Tasks 7–8 — Jenkins Installation and Pipeline
 
 ## Installing Jenkins
 
@@ -25,7 +25,7 @@ Install the suggested plugins, then add these if they are not already present:
 **Tool configuration** — *Manage Jenkins → Tools*: add a JDK (17) and a Maven
 installation, or tick *Install automatically*.
 
-## Task 6 — a freestyle build job
+## Task 7 — a freestyle build job
 
 This is the simpler job, worth building first to show a plain CI build:
 
@@ -42,9 +42,9 @@ This is the simpler job, worth building first to show a plain CI build:
    - *Publish JUnit test result report*: `target/surefire-reports/*.xml`
 
 Run it. The console log shows the Maven build, and the build page then offers the
-WAR as a downloadable artefact — that is the evidence for Task 6.
+WAR as a downloadable artefact — that is the evidence for Task 7.
 
-## Task 7 — the pipeline job
+## Task 8 — the pipeline job
 
 1. *New Item → Pipeline*, name it `speaker-session-pipeline`.
 2. **Pipeline → Definition**: *Pipeline script from SCM*.
@@ -60,28 +60,48 @@ WAR as a downloadable artefact — that is the evidence for Task 6.
 | `APP_ENV` | `ci` | Shown in the application footer, so you can see which build you are looking at |
 | `REGISTRY` | `docker.io/<user>` | Where to push the image |
 | `PUSH_IMAGE` | `false` | Only push when credentials are configured |
+| `TOMCAT_HOME` | *(empty)* | Path to a standalone Tomcat. Set it to run the Tomcat deploy stage; leave it empty to skip. |
 
-`APP_ENV` is the parameterised environment setting Task 7 asks for: the same
+`APP_ENV` is the parameterised environment setting Task 8 asks for: the same
 image is deployed to different environments by changing a parameter, never by
 rebuilding.
 
-### Deploying to Tomcat instead of Docker
+### The Tomcat deploy stage
 
-The artefact is a WAR precisely so this is possible. Drop it into a standalone
-Tomcat:
+Task 8 asks for a deployment to Tomcat or Nginx, so the pipeline has a
+**Deploy to Tomcat** stage. It is skipped unless you give it a path:
+
+```
+TOMCAT_HOME = /usr/local/opt/tomcat/libexec
+```
+
+The stage copies the WAR into `webapps/` and then polls
+`http://localhost:8080/speaker-session-manager/actuator/health` until Tomcat has
+finished expanding it — so a build only goes green once the deployed application
+actually answers.
+
+Installing Tomcat, if you need it:
+
+```bash
+brew install tomcat
+brew services start tomcat
+ls /usr/local/opt/tomcat/libexec/webapps
+```
+
+Doing it by hand is the same two steps:
 
 ```bash
 cp target/speaker-session-manager.war $CATALINA_HOME/webapps/
-# the application is then at http://localhost:8080/speaker-session-manager/
+curl http://localhost:8080/speaker-session-manager/actuator/health
 ```
 
-Or with the *Deploy to container* Jenkins plugin, add a post-build action
-pointing at the Tomcat manager URL with a credentials id.
+Note that Jenkins also defaults to port 8080. Either move Jenkins
+(`--httpPort=9090`) or run Tomcat on another port before doing this.
 
 ## Reading a pipeline run
 
 The pipeline's stage view shows each stage as a column. A red stage stops
-everything after it, which is the behaviour Task 9 asks for: failing tests must
+everything after it, which is the behaviour Task 10 asks for: failing tests must
 block deployment.
 
 Useful artefacts on every build page:

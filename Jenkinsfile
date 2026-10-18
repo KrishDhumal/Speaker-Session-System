@@ -16,6 +16,8 @@ pipeline {
                description: 'Docker Hub user or local registry host:port')
         booleanParam(name: 'PUSH_IMAGE', defaultValue: false,
                description: 'Push the image to the registry (needs credentials)')
+        string(name: 'TOMCAT_HOME', defaultValue: '',
+               description: 'Path to a standalone Tomcat. Leave empty to skip the Tomcat deploy (Task 8).')
     }
 
     environment {
@@ -68,6 +70,29 @@ pipeline {
                 always {
                     junit 'target/surefire-reports/*.xml'
                 }
+            }
+        }
+
+        // Task 8 asks for a deployment to Tomcat or Nginx. The artefact is a WAR
+        // precisely so this works: drop it into webapps and Tomcat expands it.
+        // Leave TOMCAT_HOME empty and this stage is skipped.
+        stage('Deploy to Tomcat') {
+            when { expression { return params.TOMCAT_HOME?.trim() } }
+            steps {
+                sh """
+                    cp target/speaker-session-manager.war ${params.TOMCAT_HOME}/webapps/
+                    echo "Deployed to ${params.TOMCAT_HOME}/webapps/"
+                """
+                // Tomcat expands the WAR in the background; wait for it to answer.
+                sh """
+                    for i in \$(seq 1 24); do
+                        if curl -fs http://localhost:8080/speaker-session-manager/actuator/health; then
+                            echo; echo "Tomcat deployment is UP"; exit 0
+                        fi
+                        sleep 5
+                    done
+                    echo "Tomcat deployment did not come up"; exit 1
+                """
             }
         }
 

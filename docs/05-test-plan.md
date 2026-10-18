@@ -1,4 +1,4 @@
-# Tasks 8–9 — Test Plan and Continuous Testing
+# Tasks 9–10 — Test Plan and Continuous Testing
 
 ## Test levels
 
@@ -85,7 +85,7 @@ mvn verify -Dit.headless=false             # watch the browser work
 mvn verify -DskipITs                       # skip Selenium
 ```
 
-## Task 9 — continuous testing in Jenkins
+## Task 10 — continuous testing in Jenkins
 
 The pipeline wires the suite in so that **a failing test stops the deployment**:
 
@@ -109,4 +109,4 @@ new Transition(APPROVED, "SPEAKER", "Approve"),   // deliberate defect
 
 Commit and push. The pipeline fails at the *Unit tests* stage
 (`speakerCannotApprove`) and never deploys. Revert the line, commit again, and
-the pipeline goes green — that pair of builds is the evidence for Task 9.
+the pipeline goes green — that pair of builds is the evidence for Task 10.

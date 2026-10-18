@@ -1,4 +1,4 @@
-# Tasks 12–13 — Configuration Management and Provisioning
+# Tasks 13–14 — Configuration Management and Provisioning
 
 ## Why Ansible rather than Puppet
 
@@ -67,7 +67,7 @@ ansible-playbook playbook.yml --tags deploy
 ansible-playbook playbook.yml -v           # more detail
 ```
 
-## Task 13 — idempotency
+## Task 14 — idempotency
 
 Idempotent means *running it twice changes nothing the second time*. Ansible
 reports this in its summary line:

@@ -1,4 +1,4 @@
-# Tasks 10–11 — Docker Image and Container Lifecycle
+# Tasks 11–12 — Docker Image and Container Lifecycle
 
 ## The Dockerfile, stage by stage
 
@@ -80,7 +80,7 @@ The H2 database is a file at `/app/data`. Without a volume, `docker rm` destroys
 every proposal. With `-v speaker-data:/app/data`, the container is disposable and
 the data is not — which is the point of treating containers as cattle.
 
-## Task 11 — Jenkins to Docker, end to end
+## Task 12 — Jenkins to Docker, end to end
 
 The `Jenkinsfile` turns a commit into a running container:
 

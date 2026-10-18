@@ -4,7 +4,7 @@ A small web application for running the talk-proposal process of a conference:
 speakers submit sessions, reviewers approve or reject them, and organizers put
 the approved ones on the schedule.
 
-It doubles as the application under test for a thirteen-task DevOps pipeline exercise — Git, Jenkins,
+It doubles as the application under test for a fourteen-task DevOps pipeline exercise — Git, Jenkins,
 Selenium, Docker and Ansible all build on this codebase.
 
 ## Stack
@@ -136,7 +136,7 @@ Commit messages use the imperative mood and name the change, e.g.
 ## Documentation
 
 Every written deliverable lives in [`docs/`](docs/README.md), which indexes
-each of the thirteen project tasks against the file that answers it.
+each of the fourteen project tasks against the file that answers it.
 
 | | |
 |---|---|
