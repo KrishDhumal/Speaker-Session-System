@@ -1,0 +1,10 @@
+target/
+data/
+.git/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+docs/
+ansible/
+README.md
