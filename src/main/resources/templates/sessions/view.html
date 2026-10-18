@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${speakerSession.title} + ' · Speaker Sessions'">Session</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<main class="container narrow">
+    <div id="flash-message" class="alert" th:if="${message}" th:text="${message}"></div>
+    <div id="flash-error" class="alert error" th:if="${error}" th:text="${error}"></div>
+
+    <div class="page-head">
+        <h1 id="session-title" th:text="${speakerSession.title}">Title</h1>
+        <span class="badge" id="session-status"
+              th:classappend="'badge-' + ${speakerSession.status.name().toLowerCase()}"
+              th:text="${speakerSession.status.label}">Status</span>
+    </div>
+
+    <dl class="detail">
+        <dt>Speaker</dt>
+        <dd id="session-speaker" th:text="${speakerSession.speakerName} + ' (' + ${speakerSession.speakerEmail} + ')'">Name</dd>
+
+        <dt>Track</dt>
+        <dd id="session-track" th:text="${speakerSession.track.label}">Track</dd>
+
+        <dt>When</dt>
+        <dd id="session-when"
+            th:text="${speakerSession.startTimeDisplay} + ' – ' + ${speakerSession.endTimeDisplay}
+                     + ' (' + ${speakerSession.durationMinutes} + ' min)'">When</dd>
+
+        <dt>Room</dt>
+        <dd id="session-room" th:text="${speakerSession.room} ?: 'Not assigned'">Room</dd>
+
+        <dt>Abstract</dt>
+        <dd id="session-summary" th:text="${speakerSession.summary} ?: '—'">Abstract</dd>
+
+        <dt th:if="${speakerSession.reviewNote}">Review note</dt>
+        <dd th:if="${speakerSession.reviewNote}" id="session-review-note" th:text="${speakerSession.reviewNote}">Note</dd>
+
+        <dt>Created by</dt>
+        <dd th:text="${speakerSession.createdBy}">user</dd>
+    </dl>
+
+    <section class="panel">
+        <h2>Workflow</h2>
+        <p id="no-transitions" class="muted" th:if="${transitions.isEmpty()}">
+            Your role has no actions available for a session in this state.
+        </p>
+        <div class="workflow-actions" th:unless="${transitions.isEmpty()}">
+            <form th:each="t : ${transitions}" method="post"
+                  th:action="@{'/sessions/' + ${speakerSession.id} + '/status'}">
+                <input type="hidden" name="target" th:value="${t.target}">
+                <input type="text" name="note" placeholder="Note (optional)" class="note-input">
+                <button type="submit" class="primary"
+                        th:id="'action-' + ${t.target.name().toLowerCase()}"
+                        th:text="${t.actionLabel}">Action</button>
+            </form>
+        </div>
+    </section>
+
+    <div class="form-actions">
+        <a id="edit-link" class="button" th:href="@{'/sessions/' + ${speakerSession.id} + '/edit'}"
+           sec:authorize="hasRole('SPEAKER')">Edit</a>
+        <a class="button" href="/sessions">Back to list</a>
+        <form method="post" th:action="@{'/sessions/' + ${speakerSession.id} + '/delete'}"
+              sec:authorize="hasRole('ORGANIZER')">
+            <button id="delete-button" type="submit" class="danger">Delete</button>
+        </form>
+    </div>
+</main>
+
+<div th:replace="~{fragments/nav :: footer}"></div>
+
+</body>
+</html>

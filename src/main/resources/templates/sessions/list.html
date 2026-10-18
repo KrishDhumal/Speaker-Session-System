@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sessions · Speaker Sessions</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<main class="container">
+    <div class="page-head">
+        <h1 id="page-title">All sessions</h1>
+        <a id="create-link" class="primary button" href="/sessions/new"
+           sec:authorize="hasRole('SPEAKER')">New session</a>
+    </div>
+
+    <div id="flash-message" class="alert" th:if="${message}" th:text="${message}"></div>
+
+    <form id="search-form" class="search-bar" th:action="@{/sessions}" method="get">
+        <input id="search-keyword" name="keyword" type="search"
+               placeholder="Search title or speaker" th:value="${keyword}">
+
+        <select id="search-status" name="status">
+            <option value="">Any status</option>
+            <option th:each="s : ${allStatuses}"
+                    th:value="${s}" th:text="${s.label}"
+                    th:selected="${status != null and status.name() == s.name()}">Status</option>
+        </select>
+
+        <select id="search-track" name="track">
+            <option value="">Any track</option>
+            <option th:each="t : ${allTracks}"
+                    th:value="${t}" th:text="${t.label}"
+                    th:selected="${track != null and track.name() == t.name()}">Track</option>
+        </select>
+
+        <button id="search-button" type="submit" class="primary">Search</button>
+        <a id="search-reset" class="button" href="/sessions">Reset</a>
+    </form>
+
+    <p id="result-count" class="muted">
+        <span th:text="${resultCount}">0</span> session(s) found
+    </p>
+
+    <p id="no-results" class="muted" th:if="${sessions.isEmpty()}">
+        No sessions match these filters.
+    </p>
+
+    <table id="sessions-table" class="table" th:unless="${sessions.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Title</th><th>Speaker</th><th>Track</th><th>Starts</th><th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${sessions}" th:attr="data-session-id=${s.id}">
+            <td><a th:href="@{'/sessions/' + ${s.id}}" th:text="${s.title}">Title</a></td>
+            <td th:text="${s.speakerName}">Speaker</td>
+            <td th:text="${s.track.label}">Track</td>
+            <td th:text="${s.startTimeDisplay}">Date</td>
+            <td>
+                <span class="badge"
+                      th:classappend="'badge-' + ${s.status.name().toLowerCase()}"
+                      th:text="${s.status.label}">Status</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<div th:replace="~{fragments/nav :: footer}"></div>
+
+</body>
+</html>

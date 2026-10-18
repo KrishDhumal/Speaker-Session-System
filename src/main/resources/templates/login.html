@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · Speaker Sessions</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="login-page">
+
+<main class="login-card">
+    <h1>Speaker Sessions</h1>
+    <p class="muted">Sign in to manage talk proposals.</p>
+
+    <div id="login-error" class="alert error" th:if="${param.error}">
+        Wrong username or password.
+    </div>
+    <div id="logout-message" class="alert" th:if="${param.loggedOut}">
+        You have been signed out.
+    </div>
+
+    <form th:action="@{/login}" method="post">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+        <button id="login-button" type="submit" class="primary">Sign in</button>
+    </form>
+
+    <details class="muted demo-accounts">
+        <summary>Demo accounts</summary>
+        <ul>
+            <li><code>speaker</code> — creates and edits proposals</li>
+            <li><code>reviewer</code> — approves or rejects</li>
+            <li><code>organizer</code> — schedules and cancels</li>
+        </ul>
+        <p>Passwords are set in <code>application.properties</code>.</p>
+    </details>
+</main>
+
+</body>
+</html>

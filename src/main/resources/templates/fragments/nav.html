@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<nav th:fragment="nav" class="nav">
+    <a class="brand" href="/dashboard">Speaker Sessions</a>
+    <div class="nav-links">
+        <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+        <a id="nav-sessions" href="/sessions">All sessions</a>
+        <a id="nav-new" href="/sessions/new" sec:authorize="hasRole('SPEAKER')">New session</a>
+    </div>
+    <form class="nav-user" th:action="@{/logout}" method="post">
+        <span id="current-user" sec:authentication="name">user</span>
+        <span class="role-chip" sec:authentication="principal.authorities">roles</span>
+        <button id="logout-button" type="submit" class="link-button">Log out</button>
+    </form>
+</nav>
+
+<footer th:fragment="footer" class="footer">
+    <span>Speaker Session Management System</span>
+    <span class="env" th:text="'env: ' + ${@environment.getProperty('app.environment')}">env: local</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formMode == 'create'} ? 'New session' : 'Edit session'">Session form</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<main class="container narrow">
+    <h1 id="page-title" th:text="${formMode == 'create'} ? 'New session' : 'Edit session'">Session form</h1>
+
+    <div id="form-errors" class="alert error" th:if="${#fields.hasErrors('speakerSession.*')}">
+        Please fix the highlighted fields.
+    </div>
+
+    <form id="session-form" method="post" th:object="${speakerSession}"
+          th:action="${formMode == 'create'} ? @{/sessions/new} : @{'/sessions/' + ${speakerSession.id} + '/edit'}">
+
+        <label for="title">Title</label>
+        <input id="title" type="text" th:field="*{title}">
+        <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+
+        <label for="speakerName">Speaker name</label>
+        <input id="speakerName" type="text" th:field="*{speakerName}">
+        <span class="field-error" th:if="${#fields.hasErrors('speakerName')}" th:errors="*{speakerName}"></span>
+
+        <label for="speakerEmail">Speaker email</label>
+        <input id="speakerEmail" type="email" th:field="*{speakerEmail}">
+        <span class="field-error" th:if="${#fields.hasErrors('speakerEmail')}" th:errors="*{speakerEmail}"></span>
+
+        <label for="track">Track</label>
+        <select id="track" th:field="*{track}">
+            <option value="">Choose a track</option>
+            <option th:each="t : ${allTracks}" th:value="${t}" th:text="${t.label}">Track</option>
+        </select>
+        <span class="field-error" th:if="${#fields.hasErrors('track')}" th:errors="*{track}"></span>
+
+        <label for="room">Room <span class="muted">(optional)</span></label>
+        <input id="room" type="text" th:field="*{room}">
+
+        <label for="startTime">Starts at</label>
+        <input id="startTime" type="datetime-local" th:field="*{startTime}">
+        <span class="field-error" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></span>
+
+        <label for="durationMinutes">Duration (minutes)</label>
+        <input id="durationMinutes" type="number" min="15" max="240" step="5" th:field="*{durationMinutes}">
+        <span class="field-error" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></span>
+
+        <label for="summary">Abstract</label>
+        <textarea id="summary" rows="6" th:field="*{summary}"></textarea>
+        <span class="field-error" th:if="${#fields.hasErrors('summary')}" th:errors="*{summary}"></span>
+
+        <div class="form-actions">
+            <button id="save-button" type="submit" class="primary">Save</button>
+            <a class="button" th:href="${formMode == 'create'} ? '/sessions' : '/sessions/' + ${speakerSession.id}">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<div th:replace="~{fragments/nav :: footer}"></div>
+
+</body>
+</html>
