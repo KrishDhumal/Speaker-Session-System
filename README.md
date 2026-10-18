@@ -4,7 +4,7 @@ A small web application for running the talk-proposal process of a conference:
 speakers submit sessions, reviewers approve or reject them, and organizers put
 the approved ones on the schedule.
 
-It is the application under test for a DevOps pipeline exercise — Git, Jenkins,
+It is the application under test for a thirteen-task DevOps pipeline exercise — Git, Jenkins,
 Selenium, Docker and Ansible all build on this codebase.
 
 ## Stack
