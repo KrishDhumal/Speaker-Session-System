@@ -1,0 +1,29 @@
+# Build output
+target/
+build/
+*.war
+*.jar
+
+# H2 database files created at runtime
+data/
+*.db
+*.mv.db
+*.trace.db
+
+# Selenium artefacts
+selenium-screenshots/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Local overrides and secrets — never commit these
+application-local.properties
+.env
