@@ -1,0 +1,122 @@
+---
+# Provisions a target node and deploys the Speaker Session Management System
+# as a Docker container.
+#
+#   ansible-playbook playbook.yml                 # provision + deploy
+#   ansible-playbook playbook.yml --check         # dry run, changes nothing
+#   ansible-playbook playbook.yml --tags deploy   # redeploy only
+#
+# Every task below is idempotent: running it twice reports "ok" the second
+# time rather than "changed". That is what makes this safe to re-run.
+
+- name: Deploy the Speaker Session Management System
+  hosts: speaker_servers
+  gather_facts: true
+
+  vars:
+    container_name: "{{ app_name }}"
+    health_url: "http://localhost:{{ app_port }}/actuator/health"
+
+  tasks:
+
+    # ---- Prerequisites ---------------------------------------------------
+    - name: Check that Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+      failed_when: docker_version.rc != 0
+      tags: [prereq]
+
+    - name: Report the Docker version found
+      ansible.builtin.debug:
+        msg: "{{ docker_version.stdout }}"
+      tags: [prereq]
+
+    - name: Create the application directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+      tags: [prereq]
+
+    - name: Create the directory the database file lives in
+      ansible.builtin.file:
+        path: "{{ app_dir }}/data"
+        state: directory
+        mode: "0777"
+      tags: [prereq]
+
+    # ---- Configuration ---------------------------------------------------
+    - name: Write the environment file the container reads
+      ansible.builtin.template:
+        src: app.env.j2
+        dest: "{{ app_dir }}/app.env"
+        mode: "0600"
+      # A changed config must restart the container, so record that it changed.
+      register: env_file
+      tags: [deploy]
+
+    # ---- Deploy ----------------------------------------------------------
+    - name: Record the image the running container currently uses
+      ansible.builtin.shell: |
+        docker inspect --format='{{ '{{' }}.Config.Image{{ '}}' }}' {{ container_name }} 2>/dev/null || echo none
+      register: previous_image
+      changed_when: false
+      failed_when: false
+      tags: [deploy]
+
+    - name: Save the previous image so a rollback can find it
+      ansible.builtin.copy:
+        content: "{{ previous_image.stdout | trim }}\n"
+        dest: "{{ app_dir }}/previous-image.txt"
+        mode: "0644"
+      when: previous_image.stdout | trim != 'none'
+      tags: [deploy]
+
+    - name: Check whether the wanted image is already running
+      ansible.builtin.shell: |
+        docker inspect --format='{{ '{{' }}.Config.Image{{ '}}' }}' {{ container_name }} 2>/dev/null || echo none
+      register: running_image
+      changed_when: false
+      failed_when: false
+      tags: [deploy]
+
+    - name: Stop and remove the old container
+      ansible.builtin.command: docker rm -f {{ container_name }}
+      when: >
+        running_image.stdout | trim != 'none' and
+        (running_image.stdout | trim != image_name + ':' + image_tag or env_file.changed)
+      failed_when: false
+      tags: [deploy]
+
+    # This is the idempotency guard: if the right image is already running and
+    # the config has not changed, the deploy is skipped entirely.
+    - name: Start the application container
+      ansible.builtin.command: >
+        docker run -d
+        --name {{ container_name }}
+        --restart unless-stopped
+        --env-file {{ app_dir }}/app.env
+        -p {{ app_port }}:8080
+        -v {{ app_dir }}/data:/app/data
+        {{ image_name }}:{{ image_tag }}
+      when: >
+        running_image.stdout | trim != image_name + ':' + image_tag or
+        env_file.changed
+      tags: [deploy]
+
+    # ---- Verify ----------------------------------------------------------
+    - name: Wait for the application to report healthy
+      ansible.builtin.uri:
+        url: "{{ health_url }}"
+        status_code: 200
+      register: health
+      until: health.status == 200 and health.json.status == 'UP'
+      retries: 20
+      delay: 5
+      tags: [deploy, verify]
+
+    - name: Show the health-check result
+      ansible.builtin.debug:
+        msg: "{{ app_name }} is UP on port {{ app_port }} ({{ health.json.status }})"
+      tags: [deploy, verify]

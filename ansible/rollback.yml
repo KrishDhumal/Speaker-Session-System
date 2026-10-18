@@ -1,0 +1,66 @@
+---
+# Puts the previous image back when a deployment turns out to be bad.
+#
+#   ansible-playbook rollback.yml
+#
+# playbook.yml writes the image it replaced into previous-image.txt, and this
+# playbook reads it back. It refuses to run rather than guessing if that file
+# is missing.
+
+- name: Roll back to the previous release
+  hosts: speaker_servers
+  gather_facts: false
+
+  vars:
+    container_name: "{{ app_name }}"
+    health_url: "http://localhost:{{ app_port }}/actuator/health"
+
+  tasks:
+
+    - name: Read the previously deployed image
+      ansible.builtin.slurp:
+        src: "{{ app_dir }}/previous-image.txt"
+      register: saved
+      failed_when: false
+
+    - name: Stop if there is no recorded previous release
+      ansible.builtin.fail:
+        msg: >
+          No previous image recorded at {{ app_dir }}/previous-image.txt —
+          there is nothing to roll back to.
+      when: saved.content is not defined
+
+    - name: Decode the image name
+      ansible.builtin.set_fact:
+        rollback_image: "{{ saved.content | b64decode | trim }}"
+
+    - name: Show what will be restored
+      ansible.builtin.debug:
+        msg: "Rolling {{ container_name }} back to {{ rollback_image }}"
+
+    - name: Remove the bad container
+      ansible.builtin.command: docker rm -f {{ container_name }}
+      failed_when: false
+
+    - name: Start the previous image again
+      ansible.builtin.command: >
+        docker run -d
+        --name {{ container_name }}
+        --restart unless-stopped
+        --env-file {{ app_dir }}/app.env
+        -p {{ app_port }}:8080
+        -v {{ app_dir }}/data:/app/data
+        {{ rollback_image }}
+
+    - name: Confirm the restored release is healthy
+      ansible.builtin.uri:
+        url: "{{ health_url }}"
+        status_code: 200
+      register: health
+      until: health.status == 200 and health.json.status == 'UP'
+      retries: 20
+      delay: 5
+
+    - name: Report success
+      ansible.builtin.debug:
+        msg: "Rollback complete — {{ rollback_image }} is UP on port {{ app_port }}"
