@@ -147,3 +147,10 @@ button.danger { background: var(--danger); border-color: var(--danger); color: #
 .login-card button { width: 100%; margin-top: 20px; }
 .demo-accounts { margin-top: 24px; font-size: 13px; }
 .demo-accounts ul { padding-left: 18px; }
+
+/* ---- One-click demo sign-in --------------------------------------------- */
+.demo-accounts { margin-top: 24px; text-align: center; }
+.demo-accounts p { font-size: 13px; margin-bottom: 10px; }
+.demo-buttons { display: flex; gap: 8px; justify-content: center; }
+.demo-buttons form { flex: 1; }
+.demo-buttons button { width: 100%; margin-top: 0; font-size: 14px; padding: 8px 4px; }

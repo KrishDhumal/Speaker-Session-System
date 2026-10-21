@@ -57,7 +57,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/actuator/health", "/error").permitAll()
+                        .requestMatchers("/login", "/demo-login", "/css/**", "/actuator/health", "/error").permitAll()
                         .requestMatchers("/sessions/new", "/sessions/*/edit").hasRole("SPEAKER")
                         .anyRequest().authenticated())
                 .formLogin(form -> form

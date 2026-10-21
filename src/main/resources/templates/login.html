@@ -29,15 +29,23 @@
         <button id="login-button" type="submit" class="primary">Sign in</button>
     </form>
 
-    <details class="muted demo-accounts">
-        <summary>Demo accounts</summary>
-        <ul>
-            <li><code>speaker</code> — creates and edits proposals</li>
-            <li><code>reviewer</code> — approves or rejects</li>
-            <li><code>organizer</code> — schedules and cancels</li>
-        </ul>
-        <p>Passwords are set in <code>application.properties</code>.</p>
-    </details>
+    <div class="demo-accounts">
+        <p class="muted">Or sign in with one click as:</p>
+        <div class="demo-buttons">
+            <form th:action="@{/demo-login}" method="post">
+                <input type="hidden" name="username" value="speaker">
+                <button id="demo-speaker" type="submit" class="button">Speaker</button>
+            </form>
+            <form th:action="@{/demo-login}" method="post">
+                <input type="hidden" name="username" value="reviewer">
+                <button id="demo-reviewer" type="submit" class="button">Reviewer</button>
+            </form>
+            <form th:action="@{/demo-login}" method="post">
+                <input type="hidden" name="username" value="organizer">
+                <button id="demo-organizer" type="submit" class="button">Organizer</button>
+            </form>
+        </div>
+    </div>
 </main>
 
 </body>
