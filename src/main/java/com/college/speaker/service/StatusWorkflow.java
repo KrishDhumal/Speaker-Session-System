@@ -28,7 +28,7 @@ public class StatusWorkflow {
             DRAFT, List.of(
                     new Transition(SUBMITTED, "SPEAKER", "Submit for review")),
             SUBMITTED, List.of(
-                    new Transition(APPROVED, "SPEAKER", "Approve"),   // DELIBERATE DEFECT: speakers must not approve their own talk
+                    new Transition(APPROVED, "REVIEWER", "Approve"),
                     new Transition(REJECTED, "REVIEWER", "Reject"),
                     new Transition(DRAFT, "REVIEWER", "Send back for changes")),
             APPROVED, List.of(
