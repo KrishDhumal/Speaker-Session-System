@@ -9,11 +9,12 @@
 
 - name: Roll back to the previous release
   hosts: speaker_servers
-  gather_facts: false
+  gather_facts: true
 
   vars:
     container_name: "{{ app_name }}"
     health_url: "http://localhost:{{ app_port }}/actuator/health"
+    app_dir: "{{ app_dir_override | default(ansible_facts['env']['HOME'] + '/' + app_name) }}"
 
   tasks:
 

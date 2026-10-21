@@ -16,6 +16,10 @@
   vars:
     container_name: "{{ app_name }}"
     health_url: "http://localhost:{{ app_port }}/actuator/health"
+    # Deploy under the target user's home directory so the demonstration needs
+    # no sudo. On a real server set app_dir=/opt/speaker-session-manager in the
+    # inventory and run with --become.
+    app_dir: "{{ app_dir_override | default(ansible_facts['env']['HOME'] + '/' + app_name) }}"
 
   tasks:
 
@@ -65,12 +69,17 @@
       failed_when: false
       tags: [deploy]
 
+    # Only record an image we are actually about to replace. Writing the
+    # currently running image on every run would make the file change each time
+    # (breaking idempotency) and would point a rollback back at itself.
     - name: Save the previous image so a rollback can find it
       ansible.builtin.copy:
         content: "{{ previous_image.stdout | trim }}\n"
         dest: "{{ app_dir }}/previous-image.txt"
         mode: "0644"
-      when: previous_image.stdout | trim != 'none'
+      when:
+        - previous_image.stdout | trim != 'none'
+        - previous_image.stdout | trim != image_name + ':' + image_tag
       tags: [deploy]
 
     - name: Check whether the wanted image is already running

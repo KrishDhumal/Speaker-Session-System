@@ -15,7 +15,9 @@ pipeline {
         string(name: 'REGISTRY', defaultValue: 'docker.io/krishdhumal',
                description: 'Docker Hub user or local registry host:port')
         booleanParam(name: 'PUSH_IMAGE', defaultValue: false,
-               description: 'Push the image to the registry (needs credentials)')
+               description: 'Push the image to the registry')
+        string(name: 'REGISTRY_CREDENTIALS', defaultValue: '',
+               description: 'Jenkins credentials id for the registry. Leave empty for a local registry, which needs no login.')
         string(name: 'TOMCAT_HOME', defaultValue: '',
                description: 'Path to a standalone Tomcat. Leave empty to skip the Tomcat deploy (Task 8).')
     }
@@ -138,7 +140,7 @@ pipeline {
         stage('Selenium tests') {
             steps {
                 // The same suite that runs locally, pointed at the container.
-                sh "mvn -B verify -Dit.base.url=${APP_URL} -Dsurefire.skip=true"
+                sh "mvn -B verify -Dit.base.url=${APP_URL} -Dsurefire.skipTests=true"
             }
             post {
                 always {
@@ -153,17 +155,31 @@ pipeline {
         stage('Publish image') {
             when { expression { return params.PUSH_IMAGE } }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub',
-                                                  usernameVariable: 'REG_USER',
-                                                  passwordVariable: 'REG_PASS')]) {
+                script {
+                    String target = "${params.REGISTRY}/${IMAGE_NAME}"
                     sh """
-                        echo "\$REG_PASS" | docker login ${params.REGISTRY} -u "\$REG_USER" --password-stdin
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${params.REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${params.REGISTRY}/${IMAGE_NAME}:latest
-                        docker push ${params.REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${params.REGISTRY}/${IMAGE_NAME}:latest
-                        docker logout ${params.REGISTRY}
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${target}:${IMAGE_TAG}
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${target}:latest
                     """
+                    if (params.REGISTRY_CREDENTIALS?.trim()) {
+                        // A real registry such as Docker Hub: log in first.
+                        withCredentials([usernamePassword(credentialsId: params.REGISTRY_CREDENTIALS,
+                                                          usernameVariable: 'REG_USER',
+                                                          passwordVariable: 'REG_PASS')]) {
+                            sh """
+                                echo "\$REG_PASS" | docker login ${params.REGISTRY} -u "\$REG_USER" --password-stdin
+                                docker push ${target}:${IMAGE_TAG}
+                                docker push ${target}:latest
+                                docker logout ${params.REGISTRY}
+                            """
+                        }
+                    } else {
+                        // A local registry accepts pushes without authentication.
+                        sh """
+                            docker push ${target}:${IMAGE_TAG}
+                            docker push ${target}:latest
+                        """
+                    }
                 }
             }
         }
