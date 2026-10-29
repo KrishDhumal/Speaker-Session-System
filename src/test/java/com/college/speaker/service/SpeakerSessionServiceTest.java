@@ -135,6 +135,71 @@ class SpeakerSessionServiceTest {
         assertThatThrownBy(() -> service.get(9999L)).isInstanceOf(SessionNotFoundException.class);
     }
 
+    /** Books a room end to end: create, submit, approve, schedule. */
+    private SpeakerSession bookRoom(String title, String room, java.time.LocalDateTime start) {
+        SpeakerSession session = sample(title, "Asha", Track.DEVOPS);
+        session.setRoom(room);
+        session.setStartTime(start);
+        SpeakerSession saved = service.create(session, "speaker");
+        service.changeStatus(saved.getId(), SessionStatus.SUBMITTED, Set.of("SPEAKER"), null);
+        service.changeStatus(saved.getId(), SessionStatus.APPROVED, Set.of("REVIEWER"), null);
+        return service.changeStatus(saved.getId(), SessionStatus.SCHEDULED, Set.of("ORGANIZER"), null);
+    }
+
+    @Test
+    @DisplayName("a room already scheduled for an overlapping time cannot be requested again")
+    void roomClashIsRefusedImmediately() {
+        SpeakerSession first = bookRoom("Pipelines 101", "Hall A", LocalDateTime.now().plusDays(10));
+
+        SpeakerSession clashing = sample("Cloud Costs", "Rahul", Track.CLOUD);
+        clashing.setRoom("hall a"); // case-insensitive on purpose
+        clashing.setStartTime(first.getStartTime().plusMinutes(10)); // overlaps
+
+        assertThatThrownBy(() -> service.create(clashing, "speaker"))
+                .isInstanceOf(RoomConflictException.class)
+                .hasMessageContaining("hall a")
+                .hasMessageContaining("Pipelines 101");
+    }
+
+    @Test
+    @DisplayName("the same room is fine once the two time slots no longer overlap")
+    void roomReusedAtADifferentTimeIsAllowed() {
+        SpeakerSession first = bookRoom("Pipelines 101", "Hall A", LocalDateTime.now().plusDays(10));
+
+        SpeakerSession second = sample("Cloud Costs", "Rahul", Track.CLOUD);
+        second.setRoom("Hall A");
+        second.setStartTime(first.getEndTime().plusMinutes(5)); // starts after the first ends
+        SpeakerSession savedSecond = service.create(second, "speaker");
+
+        assertThat(savedSecond.getRoom()).isEqualTo("Hall A");
+    }
+
+    @Test
+    @DisplayName("editing into a clashing room is refused; keeping a session's own room is fine")
+    void roomClashOnUpdate() {
+        SpeakerSession first = bookRoom("Pipelines 101", "Hall A", LocalDateTime.now().plusDays(10));
+
+        // A second session, parked in a different room, with no conflict yet.
+        SpeakerSession second = sample("Cloud Costs", "Rahul", Track.CLOUD);
+        second.setRoom("Hall B");
+        second.setStartTime(first.getStartTime());
+        SpeakerSession savedSecond = service.create(second, "speaker");
+
+        // Editing it to ask for Hall A at an overlapping time is refused.
+        SpeakerSession edit = sample("Cloud Costs", "Rahul", Track.CLOUD);
+        edit.setRoom("Hall A");
+        edit.setStartTime(first.getStartTime());
+        assertThatThrownBy(() -> service.update(savedSecond.getId(), edit))
+                .isInstanceOf(RoomConflictException.class);
+
+        // Re-saving the first session's own form, unchanged, must not clash with itself.
+        SpeakerSession selfEdit = sample("Pipelines 101", "Asha", Track.DEVOPS);
+        selfEdit.setRoom("Hall A");
+        selfEdit.setStartTime(first.getStartTime());
+        SpeakerSession updated = service.update(first.getId(), selfEdit);
+        assertThat(updated.getRoom()).isEqualTo("Hall A");
+    }
+
     @Test
     @DisplayName("the dashboard counts every status and track")
     void dashboardCounts() {

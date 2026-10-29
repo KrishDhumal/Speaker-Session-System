@@ -36,4 +36,11 @@ public interface SpeakerSessionRepository extends JpaRepository<SpeakerSession, 
     long countByTrack(Track track);
 
     List<SpeakerSession> findByStatusAndStartTimeAfterOrderByStartTimeAsc(SessionStatus status, LocalDateTime after);
+
+    /**
+     * Every other scheduled session in this room — the candidate pool for a
+     * room-clash check. Scheduled sessions only: a room is "taken" once the
+     * organizer has committed to it, not while it is still a draft.
+     */
+    List<SpeakerSession> findByRoomIgnoreCaseAndStatus(String room, SessionStatus status);
 }

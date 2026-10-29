@@ -4,6 +4,7 @@ import com.college.speaker.domain.SessionStatus;
 import com.college.speaker.domain.SpeakerSession;
 import com.college.speaker.domain.Track;
 import com.college.speaker.service.IllegalTransitionException;
+import com.college.speaker.service.RoomConflictException;
 import com.college.speaker.service.SpeakerSessionService;
 import com.college.speaker.service.StatusWorkflow;
 import jakarta.validation.Valid;
@@ -78,9 +79,15 @@ public class SessionController {
             model.addAttribute("formMode", "create");
             return "sessions/form";
         }
-        SpeakerSession saved = service.create(session, CurrentUser.username(authentication));
-        redirect.addFlashAttribute("message", "Session created as a draft.");
-        return "redirect:/sessions/" + saved.getId();
+        try {
+            SpeakerSession saved = service.create(session, CurrentUser.username(authentication));
+            redirect.addFlashAttribute("message", "Session created as a draft.");
+            return "redirect:/sessions/" + saved.getId();
+        } catch (RoomConflictException ex) {
+            binding.rejectValue("room", "room.conflict", ex.getMessage());
+            model.addAttribute("formMode", "create");
+            return "sessions/form";
+        }
     }
 
     @GetMapping("/{id}")
@@ -109,9 +116,15 @@ public class SessionController {
             model.addAttribute("formMode", "edit");
             return "sessions/form";
         }
-        service.update(id, session);
-        redirect.addFlashAttribute("message", "Session updated.");
-        return "redirect:/sessions/" + id;
+        try {
+            service.update(id, session);
+            redirect.addFlashAttribute("message", "Session updated.");
+            return "redirect:/sessions/" + id;
+        } catch (RoomConflictException ex) {
+            binding.rejectValue("room", "room.conflict", ex.getMessage());
+            model.addAttribute("formMode", "edit");
+            return "sessions/form";
+        }
     }
 
     @PostMapping("/{id}/status")
@@ -123,7 +136,7 @@ public class SessionController {
         try {
             service.changeStatus(id, target, CurrentUser.roles(authentication), note);
             redirect.addFlashAttribute("message", "Status changed to " + target.getLabel() + ".");
-        } catch (IllegalTransitionException ex) {
+        } catch (IllegalTransitionException | RoomConflictException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/sessions/" + id;

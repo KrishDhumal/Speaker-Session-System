@@ -145,6 +145,11 @@ public abstract class SeleniumTestBase {
     /**
      * Fills the new-session form and saves. Returns the id of the session just
      * created, read back from the detail page URL.
+     *
+     * <p>The room is unique per call (like {@link #uniqueTitle}) rather than a
+     * fixed "Hall A": the service now refuses a room already scheduled for an
+     * overlapping time, so two tests sharing one room and the same default
+     * time slot would otherwise clash with each other.
      */
     protected long createSession(String title, String speakerName, String track) {
         open("/sessions/new");
@@ -152,7 +157,20 @@ public abstract class SeleniumTestBase {
         type(By.id("speakerName"), speakerName);
         type(By.id("speakerEmail"), "speaker@example.com");
         selectByValue("track", track);
-        type(By.id("room"), "Hall A");
+        type(By.id("room"), "Hall " + System.nanoTime());
+        click(By.id("save-button"));
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("session-title")));
+        return currentSessionId();
+    }
+
+    /** Same as {@link #createSession}, but with a caller-chosen room. */
+    protected long createSessionInRoom(String title, String speakerName, String track, String room) {
+        open("/sessions/new");
+        type(By.id("title"), title);
+        type(By.id("speakerName"), speakerName);
+        type(By.id("speakerEmail"), "speaker@example.com");
+        selectByValue("track", track);
+        type(By.id("room"), room);
         click(By.id("save-button"));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("session-title")));
         return currentSessionId();

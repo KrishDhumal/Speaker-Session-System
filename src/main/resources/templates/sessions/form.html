@@ -41,6 +41,7 @@
 
         <label for="room">Room <span class="muted">(optional)</span></label>
         <input id="room" type="text" th:field="*{room}">
+        <span class="field-error" id="room-error" th:if="${#fields.hasErrors('room')}" th:errors="*{room}"></span>
 
         <label for="startTime">Starts at</label>
         <input id="startTime" type="datetime-local" th:field="*{startTime}">

@@ -13,6 +13,41 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowIT extends SeleniumTestBase {
 
     @Test
+    @DisplayName("a room already scheduled for an overlapping time cannot be requested again")
+    void roomAlreadyScheduledIsRefused() {
+        // Book a room end to end, exactly as the full approval journey does,
+        // except the room is fixed rather than the usual unique-per-test one.
+        signInAs(SPEAKER_USER);
+        long bookedId = createSessionInRoom(uniqueTitle("Keynote"), "Asha Menon", "DEVOPS", "Studio 1");
+        click(By.id("action-submitted"));
+        switchTo(REVIEWER_USER);
+        open("/sessions/" + bookedId);
+        click(By.id("action-approved"));
+        switchTo(ORGANIZER_USER);
+        open("/sessions/" + bookedId);
+        click(By.id("action-scheduled"));
+        assertThat(browser().findElement(By.id("session-status")).getText()).isEqualTo("Scheduled");
+
+        // A second speaker asks for the same room — different case, same
+        // default time slot the new-session form always starts with — and the
+        // server refuses it before the proposal is even saved.
+        switchTo(SPEAKER_USER);
+        open("/sessions/new");
+        type(By.id("title"), uniqueTitle("Second Talk"));
+        type(By.id("speakerName"), "Rahul Nair");
+        type(By.id("speakerEmail"), "rahul@example.com");
+        selectByValue("track", "CLOUD");
+        type(By.id("room"), "studio 1");
+        click(By.id("save-button"));
+
+        assertThat(browser().getCurrentUrl()).contains("/sessions/new");
+        assertThat(browser().findElement(By.id("form-errors")).getText()).contains("fix the highlighted fields");
+        assertThat(browser().findElement(By.id("room-error")).getText())
+                .contains("already scheduled")
+                .contains("Keynote");
+    }
+
+    @Test
     @DisplayName("draft to scheduled, passing through all three roles")
     void fullApprovalJourney() {
         signInAs(SPEAKER_USER);

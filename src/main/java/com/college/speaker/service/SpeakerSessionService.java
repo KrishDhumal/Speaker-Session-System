@@ -41,12 +41,14 @@ public class SpeakerSessionService {
         session.setId(null);
         session.setStatus(SessionStatus.DRAFT);
         session.setCreatedBy(username);
+        checkRoomAvailable(session, null);
         return repository.save(session);
     }
 
     /** Copies the editable fields only — status is moved through {@link #changeStatus}. */
     public SpeakerSession update(Long id, SpeakerSession edited) {
         SpeakerSession existing = get(id);
+        checkRoomAvailable(edited, id);
         existing.setTitle(edited.getTitle());
         existing.setSpeakerName(edited.getSpeakerName());
         existing.setSpeakerEmail(edited.getSpeakerEmail());
@@ -63,11 +65,40 @@ public class SpeakerSessionService {
         if (!workflow.isAllowed(session.getStatus(), target, roles)) {
             throw new IllegalTransitionException(session.getStatus(), target);
         }
+        if (target == SessionStatus.SCHEDULED) {
+            checkRoomAvailable(session, session.getId());
+        }
         session.setStatus(target);
         if (StringUtils.hasText(note)) {
             session.setReviewNote(note.trim());
         }
         return repository.save(session);
+    }
+
+    /**
+     * Refuses a room that is already scheduled for an overlapping time slot.
+     * A speaker hits this while drafting a proposal; an organizer hits it
+     * again when actually scheduling two approved talks into the same room.
+     * {@code excludeId} leaves a session's own prior booking out of the check
+     * (editing a session, or re-confirming the one already being scheduled).
+     */
+    private void checkRoomAvailable(SpeakerSession candidate, Long excludeId) {
+        if (!StringUtils.hasText(candidate.getRoom()) || candidate.getStartTime() == null) {
+            return;
+        }
+        for (SpeakerSession existing : repository.findByRoomIgnoreCaseAndStatus(
+                candidate.getRoom(), SessionStatus.SCHEDULED)) {
+            if (existing.getId().equals(excludeId)) {
+                continue;
+            }
+            if (overlaps(candidate, existing)) {
+                throw new RoomConflictException(candidate.getRoom(), existing);
+            }
+        }
+    }
+
+    private boolean overlaps(SpeakerSession a, SpeakerSession b) {
+        return a.getStartTime().isBefore(b.getEndTime()) && b.getStartTime().isBefore(a.getEndTime());
     }
 
     public void delete(Long id) {
