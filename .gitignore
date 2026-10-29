@@ -27,3 +27,4 @@ selenium-screenshots/
 # Local overrides and secrets — never commit these
 application-local.properties
 .env
+.claude/
